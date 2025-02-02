@@ -29,7 +29,7 @@ class ExportManager(bpy.types.Operator):
                 print("Error: No Color Ramp node selected")
                 return {'CANCELLED'}
 
-            colors = getRampColors(rampSrc)
+            colors = getRampColors(rampSrc,ramp_settings.width)
             img = generateImage(colors,context)
             saveImage(img, file_path = self.filepath)
         
@@ -48,7 +48,7 @@ class ExportManager(bpy.types.Operator):
                 for item in collected_ramps:
                     name = item.ramp_name
                     ramp_item = ramp_dict[name]
-                    item_colors = getRampColors(ramp_item)
+                    item_colors = getRampColors(ramp_item,ramp_settings.width)
                     appendImageColors(colors,item_colors)
                 
             img = generateImage(colors,context)
@@ -62,10 +62,11 @@ def generateSamplePoints(num):
     return [i * step for i in range(num)]
 
 
-def getRampColors(ramp):
+def getRampColors(ramp,stripe_width):
     # get the color ramp
     colors = []
-    positions = generateSamplePoints(256)
+
+    positions = generateSamplePoints(stripe_width)
     for position in positions:
         color_elem = ramp.color_ramp.evaluate(position)
         colors.append(color_elem[0:4])
@@ -77,40 +78,48 @@ def generateImage(colors,context: bpy.types.Context):
     ramp_settings = context.scene.ramp_settings
     collected_ramps = context.scene.collected_ramp
     
+    width = ramp_settings.width
+    height = ramp_settings.height
+
     #if is single len(colors)=width
     #else len(colors)=stepwidth
     if (ramp_settings.exportMode == 'Single') :
-        img = bpy.data.images.new('color_ramp', len(colors), 8)
+        img = bpy.data.images.new('color_ramp', width, height)
         pixels = [channel for color in colors for channel in color]
         
-        for j in range(3):
-            for i in range(len(pixels)):
-                pixels.append(pixels[i])
+        # for j in range(3):
+        #     for i in range(len(pixels)):
+        #         pixels.append(pixels[i])
+        
+        for i in range(height - 1):
+            for j in range(width * 4):
+                pixels.append(pixels[j])
+
         img.pixels = pixels
         
         return img
     
     elif (ramp_settings.expandMode == 'Vertical'):
-        img = bpy.data.images.new('color_ramp', 256 , 8 * len(collected_ramps))
+        img = bpy.data.images.new('color_ramp', width , height * len(collected_ramps))
         
         pixels = []
         
         for i in range(len(collected_ramps)):
-            for k in range(8):
-                for j in range(256):
-                    color = colors[256*i+j]
+            for k in range(height):
+                for j in range(ramp_settings.width):
+                    color = colors[ramp_settings.width * i+j]
                     pixels.extend(color[0:4])
             
         img.pixels = pixels
         return img
     
     else :
-        img = bpy.data.images.new('color_ramp', 256 * len(collected_ramps) , 8)
+        img = bpy.data.images.new('color_ramp', width * len(collected_ramps) , height)
         pixels = [channel for color in colors for channel in color]
         
-        for j in range(3):
-            for i in range(len(pixels)):
-                pixels.append(pixels[i])
+        for i in range(height - 1):
+            for j in range(width * 4 * len(collected_ramps)):
+                pixels.append(pixels[j])
                 
         img.pixels = pixels
         return img
@@ -169,7 +178,8 @@ class AddRamp(bpy.types.Operator):
     def execute(self, context: bpy.types.Context):
         collected_ramps = context.scene.collected_ramp
         
-        #TODO: add a ramp slot and save it to dic
+        # TODO: add a ramp slot and save it to dic
+        # ensure selected node is a color ramp node
         new_ramp = context.scene.collected_ramp.add()
 
         context.scene.active_ramp_index = len(collected_ramps) - 1

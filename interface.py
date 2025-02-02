@@ -11,7 +11,8 @@ class RAMP_UL_texslots_example(bpy.types.UIList):
         slot = item
         
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.prop(item, "name", text=item.ramp_name, emboss=False, icon_value=icon)
+            # 859 : ramp icon
+            layout.prop(item, "name", text=item.ramp_name, emboss=False, icon_value= 859)
 
         elif self.layout_type == 'GRID':
             layout.alignment = 'CENTER'

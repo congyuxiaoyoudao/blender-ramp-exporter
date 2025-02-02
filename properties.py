@@ -9,8 +9,8 @@ from bpy.props import(
 )
 
 class RampTexPropertyGroup(bpy.types.PropertyGroup):
-    width: IntProperty(name="Width", default=256, min=1)
-    height: IntProperty(name="Height", default=1, min=1)
+    width: IntProperty(name="Width", default=256, min=128,max=1024)
+    height: IntProperty(name="Height", default=8, min=1,max=8)
     expandMode : EnumProperty(
         name="ExpandMode",description = "expand mode",
         items=[("Vertical","Vertical",""),
