@@ -5,7 +5,7 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 1, 0),
     "location": "Shader Node Editor",
-    "description": "export ramps to a file",
+    "description": "Export ShaderNode 'ColorRamp' to a imagefile",
     "warning": "",
     "doc_url": "",
     "category": "Node",

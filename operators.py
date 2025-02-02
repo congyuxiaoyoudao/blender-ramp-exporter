@@ -19,8 +19,8 @@ class ExportManager(bpy.types.Operator):
 
     def execute(self, context: bpy.types.Context):
         # get export attribute
-        ramp = context.scene.ramp_tex
-        if(ramp.exportMode == "Single"):
+        ramp_settings = context.scene.ramp_settings
+        if(ramp_settings.exportMode == "Single"):
             rampSrc = getActiveRamp()
             if rampSrc is not None:
                 print("yes")
@@ -47,11 +47,16 @@ class ExportManager(bpy.types.Operator):
                 
         self.report({'INFO'}, "Image saved successfully")
         return {'FINISHED'}
-    
+
+def generateSamplePoints(num):  
+    step = 1.0 / (num - 1)
+    return [i * step for i in range(num)]
+
+
 def getRampColors(ramp):
-    # 获取 Color Ramp 节点的颜色列表
+    # get the color ramp
     colors = []
-    positions = np.linspace(0, 1, 256)
+    positions = generateSamplePoints(256)
     for position in positions:
         color_elem = ramp.color_ramp.evaluate(position)
         colors.append(color_elem[0:4])
@@ -59,13 +64,13 @@ def getRampColors(ramp):
     return colors
 
 def generateImage(colors,context: bpy.types.Context):
-    # 生成图片
-    ramp = context.scene.ramp_tex
+
+    ramp_settings = context.scene.ramp_settings
     collected_ramps = context.scene.collected_ramp
     
     #if is single len(colors)=width
     #else len(colors)=stepwidth
-    if (ramp.exportMode == 'Single') :
+    if (ramp_settings.exportMode == 'Single') :
         img = bpy.data.images.new('color_ramp', len(colors), 8)
         pixels = [channel for color in colors for channel in color]
         
@@ -76,7 +81,7 @@ def generateImage(colors,context: bpy.types.Context):
         
         return img
     
-    elif (ramp.expandMode == 'Vertical'):
+    elif (ramp_settings.expandMode == 'Vertical'):
         img = bpy.data.images.new('color_ramp', 256 , 8 * len(collected_ramps))
         
         pixels = []
@@ -109,31 +114,31 @@ def appendImageColors(colors,item_colors):
     return colors
     
 def saveImage(img, file_path):
-    # 保存图片
+    
     img.save(filepath = file_path)
     img.file_format = 'PNG'
 
     print("Image saved successfully")
 
 def getActiveRamp():
-    # 获取当前上下文中的节点编辑器
+    # get node editor space
     space = bpy.context.space_data
     if not space:
         return None
 
-    # 获取当前节点树
+    # get node tree
     node_tree = space.edit_tree
     if not node_tree:
         return None
 
-    # 获取选中的节点
+    # get selected nodes
     selected_nodes = [node for node in node_tree.nodes if node.select]
     if not selected_nodes:
         return None
 
-    # 判断选中的节点是否为 Color Ramp 节点
+    # judge if the selected node is a Color Ramp node
     for node in selected_nodes:
-        if node.type == 'VALTORGB':  # Color Ramp 节点的类型标识符
+        if node.type == 'VALTORGB':
             return node
 
     return None

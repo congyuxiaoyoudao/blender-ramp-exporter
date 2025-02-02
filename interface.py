@@ -33,14 +33,14 @@ class RampExporterPanel(bpy.types.Panel):
         
         layout.label(text="(Quick access: Shift+E)")
         
-        ramp = context.scene.ramp_tex
-        layout.prop(ramp, "width")
-        layout.prop(ramp, "height")
-        layout.prop(ramp,"exportMode",expand = True)
-        layout.prop(ramp,"expandMode")
+        ramp_settings = context.scene.ramp_settings
+        layout.prop(ramp_settings, "width", text="Stripe Width")
+        layout.prop(ramp_settings, "height",text="Stripe Height")
+        layout.prop(ramp_settings,"exportMode",expand = True,text="Export Mode")
+
         
         scene = context.scene
-        if ramp.exportMode == "Multiple" :
+        if ramp_settings.exportMode == "Multiple" :
             row = layout.row()
             
 
@@ -57,8 +57,9 @@ class RampExporterPanel(bpy.types.Panel):
 
             col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
             col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
-        
+            layout.prop(ramp_settings,"expandMode",text="Expand Mode")
         layout.separator()
+
         layout.operator("node.ramp_export", text="Export Ramp")
 
 

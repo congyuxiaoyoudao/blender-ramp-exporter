@@ -33,7 +33,7 @@ def register():
     for cls in classes:
         register_class(cls)
 
-    bpy.types.Scene.ramp_tex = PointerProperty(type=RampTexPropertyGroup)
+    bpy.types.Scene.ramp_settings = PointerProperty(type=RampTexPropertyGroup)
     bpy.types.Scene.collected_ramp = CollectionProperty(type= RampNamePropertyGroup)
     bpy.types.Scene.active_ramp_index = IntProperty(default = -1)
 
@@ -42,6 +42,6 @@ def unregister():
     for cls in classes:
         unregister_class(cls)
     
-    del bpy.types.Scene.ramp_tex
+    del bpy.types.Scene.ramp_settings
     del bpy.types.Scene.collected_ramp
     del bpy.types.Scene.active_ramp_index
