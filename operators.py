@@ -27,6 +27,7 @@ class ExportManager(bpy.types.Operator):
             else:
                 self.report({'WARNING'}, "No Color Ramp node selected")
                 print("Error: No Color Ramp node selected")
+                return {'CANCELLED'}
 
             colors = getRampColors(rampSrc)
             img = generateImage(colors,context)
@@ -36,11 +37,19 @@ class ExportManager(bpy.types.Operator):
             colors = []
             #iterate the collection and fetch the ramp name
             collected_ramps = context.scene.collected_ramp
-            for item in collected_ramps:
-                name = item.ramp_name
-                ramp_item = ramp_dict[name]
-                item_colors = getRampColors(ramp_item)
-                appendImageColors(colors,item_colors)
+            ramp_num = len(collected_ramps)
+
+            if ramp_num == 0:
+                self.report({'ERROR'}, "Color Ramp List is empty")
+                print("Error: No Color Ramp node selected")
+                return {'CANCELLED'}
+            
+            else :
+                for item in collected_ramps:
+                    name = item.ramp_name
+                    ramp_item = ramp_dict[name]
+                    item_colors = getRampColors(ramp_item)
+                    appendImageColors(colors,item_colors)
                 
             img = generateImage(colors,context)
             saveImage(img, file_path = self.filepath)

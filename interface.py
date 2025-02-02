@@ -24,7 +24,6 @@ class RampExporterPanel(bpy.types.Panel):
     bl_label = "Ramp Exporter"
     bl_region_type = "UI"
     bl_category = "Ramp Exporter"
-    bl_context = "shader_editor" 
 
     def draw(self, context):
         layout = self.layout
@@ -65,7 +64,8 @@ class RampExporterPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        return True
+        tree_type = context.space_data.tree_type
+        return tree_type == 'ShaderNodeTree' or tree_type == 'CompositorNodeTree'
     
 classes = [RampExporterPanel, 
            RAMP_UL_texslots_example
