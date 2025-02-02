@@ -1,0 +1,218 @@
+import bpy
+import numpy as np
+
+class ExportManager(bpy.types.Operator):
+    bl_idname = "node.ramp_export"
+    bl_label = "ExportManager"
+
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    
+    @classmethod
+    def poll(cls, context: bpy.types.Context):
+        return context.active_object is not None
+    
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context: bpy.types.Context):
+        # get export attribute
+        ramp = context.scene.ramp_tex
+        if(ramp.exportMode == "Single"):
+            rampSrc = getActiveRamp()
+            if rampSrc is not None:
+                print("yes")
+            else:
+                self.report({'WARNING'}, "No Color Ramp node selected")
+                print("Error: No Color Ramp node selected")
+
+            colors = getRampColors(rampSrc)
+            img = generateImage(colors,context)
+            saveImage(img, file_path = self.filepath)
+        
+        else :
+            colors = []
+            #iterate the collection and fetch the ramp name
+            collected_ramps = context.scene.collected_ramp
+            for item in collected_ramps:
+                name = item.ramp_name
+                ramp_item = ramp_dict[name]
+                item_colors = getRampColors(ramp_item)
+                appendImageColors(colors,item_colors)
+                
+            img = generateImage(colors,context)
+            saveImage(img, file_path = self.filepath)
+                
+        self.report({'INFO'}, "Image saved successfully")
+        return {'FINISHED'}
+    
+def getRampColors(ramp):
+    # 获取 Color Ramp 节点的颜色列表
+    colors = []
+    positions = np.linspace(0, 1, 256)
+    for position in positions:
+        color_elem = ramp.color_ramp.evaluate(position)
+        colors.append(color_elem[0:4])
+
+    return colors
+
+def generateImage(colors,context: bpy.types.Context):
+    # 生成图片
+    ramp = context.scene.ramp_tex
+    collected_ramps = context.scene.collected_ramp
+    
+    #if is single len(colors)=width
+    #else len(colors)=stepwidth
+    if (ramp.exportMode == 'Single') :
+        img = bpy.data.images.new('color_ramp', len(colors), 8)
+        pixels = [channel for color in colors for channel in color]
+        
+        for j in range(3):
+            for i in range(len(pixels)):
+                pixels.append(pixels[i])
+        img.pixels = pixels
+        
+        return img
+    
+    elif (ramp.expandMode == 'Vertical'):
+        img = bpy.data.images.new('color_ramp', 256 , 8 * len(collected_ramps))
+        
+        pixels = []
+        
+        for i in range(len(collected_ramps)):
+            for k in range(8):
+                for j in range(256):
+                    color = colors[256*i+j]
+                    pixels.extend(color[0:4])
+            
+        img.pixels = pixels
+        return img
+    
+    else :
+        img = bpy.data.images.new('color_ramp', 256 * len(collected_ramps) , 8)
+        pixels = [channel for color in colors for channel in color]
+        
+        for j in range(3):
+            for i in range(len(pixels)):
+                pixels.append(pixels[i])
+                
+        img.pixels = pixels
+        return img
+        
+
+def appendImageColors(colors,item_colors):
+    for color_elem in item_colors:
+        colors.append(color_elem[0:4])
+        
+    return colors
+    
+def saveImage(img, file_path):
+    # 保存图片
+    img.save(filepath = file_path)
+    img.file_format = 'PNG'
+
+    print("Image saved successfully")
+
+def getActiveRamp():
+    # 获取当前上下文中的节点编辑器
+    space = bpy.context.space_data
+    if not space:
+        return None
+
+    # 获取当前节点树
+    node_tree = space.edit_tree
+    if not node_tree:
+        return None
+
+    # 获取选中的节点
+    selected_nodes = [node for node in node_tree.nodes if node.select]
+    if not selected_nodes:
+        return None
+
+    # 判断选中的节点是否为 Color Ramp 节点
+    for node in selected_nodes:
+        if node.type == 'VALTORGB':  # Color Ramp 节点的类型标识符
+            return node
+
+    return None
+
+def format_ramp_name(index):
+    return f"ramp{index:03d}"
+
+class AddRamp(bpy.types.Operator):
+    bl_idname = "node.ramp_slot_add"
+    bl_label = "addRampSlot"
+
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    
+    @classmethod
+    def poll(cls, context: bpy.types.Context):
+        return True
+
+    def execute(self, context: bpy.types.Context):
+        collected_ramps = context.scene.collected_ramp
+        
+        #TODO: add a ramp slot and save it to dic
+        new_ramp = context.scene.collected_ramp.add()
+
+        context.scene.active_ramp_index = len(collected_ramps) - 1
+        new_ramp.ramp_name = format_ramp_name(context.scene.active_ramp_index)
+        self.report({'INFO'}, "rampname: "+str(new_ramp.ramp_name))
+        
+        ramp_tex = getActiveRamp()
+        addRampToDict(new_ramp.ramp_name,ramp_tex)
+
+        return {'FINISHED'}
+    
+class RemoveRamp(bpy.types.Operator):
+    bl_idname = "node.ramp_slot_remove"
+    bl_label = "removeRampSlot"
+
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    
+    @classmethod
+    def poll(cls, context: bpy.types.Context):
+        return True
+
+    def execute(self, context: bpy.types.Context):
+        active_ramp_index = context.scene.active_ramp_index
+        collected_ramps = context.scene.collected_ramp
+        
+        #TODO: remove a ramp slot and delete it from dic
+        collected_ramps.remove(active_ramp_index)
+        #if ai is 0 and len>0 dont need to change
+        #if ai is 1 and len=6 dont need
+        #id ai is tail and len>0
+
+        if context.scene.active_ramp_index == len(collected_ramps):
+            context.scene.active_ramp_index -= 1
+        else: 
+            removeRampFromDict(collected_ramps[context.scene.active_ramp_index].ramp_name)      
+        return {'FINISHED'}
+    
+ramp_dict = {}
+
+def addRampToDict(ramp_name, ramp_tex):
+    ramp_dict[ramp_name] = ramp_tex
+    
+def removeRampFromDict(ramp_name):
+    del ramp_dict[ramp_name]
+    
+classes = [ExportManager,AddRamp,RemoveRamp]
+
+
+def register():
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+
+
+def unregister():
+    from bpy.utils import unregister_class
+
+    for cls in classes:
+        unregister_class(cls)
