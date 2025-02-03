@@ -54,6 +54,7 @@ class ExportManager(bpy.types.Operator):
                 for i in range(ramp_num):
                     item = collected_ramps[i]
                     name = item.ramp_name
+
                     ramp_item = ramp_dict[name]
                     item_colors = getRampColors(ramp_item,ramp_settings.width)
                     appendImageColors(colors,item_colors)
@@ -111,10 +112,10 @@ def generateImage(colors,context: bpy.types.Context):
         
         pixels = []
         
-        for i in range(len(collected_ramps)):
+        for i in range(len(collected_ramps) - 1, -1 , -1):
             for k in range(height):
-                for j in range(ramp_settings.width):
-                    color = colors[ramp_settings.width * i+j]
+                for j in range(width):
+                    color = colors[width * i + j]
                     pixels.extend(color[0:4])
             
         img.pixels = pixels
@@ -180,7 +181,7 @@ class AddRamp(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        return True
+        return getActiveRamp() is not None
 
     def execute(self, context: bpy.types.Context):
         collected_ramps = context.scene.collected_ramp
@@ -207,7 +208,7 @@ class RemoveRamp(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        return True
+        return context.scene.active_ramp_index >= 0
 
     def execute(self, context: bpy.types.Context):
         active_ramp_index = context.scene.active_ramp_index
