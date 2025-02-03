@@ -225,6 +225,39 @@ class RemoveRamp(bpy.types.Operator):
         else: 
             removeRampFromDict(collected_ramps[context.scene.active_ramp_index].ramp_name)      
         return {'FINISHED'}
+
+class RE_OT_ramp_move(bpy.types.Operator):
+
+    bl_idname = "node.ramp_slot_move"
+    bl_label = "Move ramp slot"
+
+    direction: bpy.props.EnumProperty(
+        name="Direction",
+        items=(
+            ('UP', 'UP', 'UP'),
+            ('DOWN', 'DOWN', 'DOWN'),
+        ),
+        default='UP',
+    )
+    
+    def execute(self, context):
+        ramp_list = context.scene.collected_ramp
+        active_index = context.scene.active_ramp_index
+
+        delta = {
+            'DOWN': 1,
+            'UP': -1,
+        }[self.direction]
+
+        to_index = active_index + delta
+        to_index = max(0, min(to_index, len(ramp_list) - 1))
+
+        temp = ramp_list[active_index].ramp_name
+        ramp_list[active_index].ramp_name = ramp_list[to_index].ramp_name
+        ramp_list[to_index].ramp_name = temp
+
+        context.scene.active_ramp_index = to_index
+        return {'FINISHED'}
     
 ramp_dict = {}
 
@@ -234,7 +267,7 @@ def addRampToDict(ramp_name, ramp_tex):
 def removeRampFromDict(ramp_name):
     del ramp_dict[ramp_name]
     
-classes = [ExportManager,AddRamp,RemoveRamp]
+classes = [ExportManager,AddRamp,RemoveRamp,RE_OT_ramp_move]
 
 
 def register():
