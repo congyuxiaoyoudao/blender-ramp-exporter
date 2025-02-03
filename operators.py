@@ -1,12 +1,14 @@
 import bpy
+from bpy_extras.io_utils import ExportHelper
 
-class ExportManager(bpy.types.Operator):
+class ExportManager(bpy.types.Operator, ExportHelper):
     bl_idname = "node.ramp_export"
     bl_label = "ExportManager"
-
+    filename_ext = ".png"
     bl_options = {'REGISTER', 'UNDO'}
     
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    filename: bpy.props.StringProperty(default="ramp.png")
     
     @classmethod
     def poll(cls, context: bpy.types.Context):
@@ -20,6 +22,7 @@ class ExportManager(bpy.types.Operator):
             return ramp_num > 0       
     
     def invoke(self, context, event):
+        self.filename = bpy.path.ensure_ext(self.filename, self.filename_ext)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -60,6 +63,7 @@ class ExportManager(bpy.types.Operator):
                     appendImageColors(colors,item_colors)
                 
             img = generateImage(colors,context)
+            self.report({'INFO'}, self.filepath,self.filename)
             saveImage(img, file_path = self.filepath)
                 
         self.report({'INFO'}, "Image saved successfully")
@@ -104,7 +108,6 @@ def generateImage(colors,context: bpy.types.Context):
                 pixels.append(pixels[j])
 
         img.pixels = pixels
-        
         return img
     
     elif (ramp_settings.expandMode == 'Vertical'):
