@@ -52,11 +52,11 @@ class RampExporterPanel(bpy.types.Panel):
             col.operator("node.ramp_slot_remove", icon='REMOVE', text="")
 
         
-            
-            col.separator()
+            if len(context.scene.collected_ramp) > 1:
+                col.separator()
 
-            col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
-            col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
+                col.operator("node.ramp_slot_move", icon='TRIA_UP', text="").direction = 'UP'
+                col.operator("node.ramp_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
             layout.prop(ramp_settings,"expandMode",text="Expand Mode")
         layout.separator()
 
