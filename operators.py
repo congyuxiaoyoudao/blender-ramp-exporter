@@ -1,5 +1,4 @@
 import bpy
-import numpy as np
 
 class ExportManager(bpy.types.Operator):
     bl_idname = "node.ramp_export"
@@ -11,7 +10,14 @@ class ExportManager(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        return context.active_object is not None
+        ramp_tex  = getActiveRamp()
+        collected_ramps = context.scene.collected_ramp
+        ramp_num = len(collected_ramps)
+
+        if context.scene.ramp_settings.exportMode == "Single":
+            return ramp_tex is not None
+        else:
+            return ramp_num > 0       
     
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
@@ -25,7 +31,7 @@ class ExportManager(bpy.types.Operator):
             if rampSrc is not None:
                 print("yes")
             else:
-                self.report({'WARNING'}, "No Color Ramp node selected")
+                self.report({'ERROR'}, "No Color Ramp node selected")
                 print("Error: No Color Ramp node selected")
                 return {'CANCELLED'}
 
@@ -35,7 +41,7 @@ class ExportManager(bpy.types.Operator):
         
         else :
             colors = []
-            #iterate the collection and fetch the ramp name
+            # iterate the collection and fetch the ramp name
             collected_ramps = context.scene.collected_ramp
             ramp_num = len(collected_ramps)
 
@@ -45,7 +51,8 @@ class ExportManager(bpy.types.Operator):
                 return {'CANCELLED'}
             
             else :
-                for item in collected_ramps:
+                for i in range(ramp_num):
+                    item = collected_ramps[i]
                     name = item.ramp_name
                     ramp_item = ramp_dict[name]
                     item_colors = getRampColors(ramp_item,ramp_settings.width)
